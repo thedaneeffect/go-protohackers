@@ -48,7 +48,7 @@ func main() {
 						return
 					}
 					fmt.Printf("%s\n", fmt.Errorf("%s: bad message: %w", addr, err))
-					continue handle_message
+					return
 				}
 
 				fmt.Printf("%s: read: %+v\n", addr, message)
@@ -64,7 +64,9 @@ func main() {
 					maxtime := int32(binary.BigEndian.Uint32(message[5:]))
 
 					if mintime > maxtime {
-						c.Write(zero[:])
+						if _, err := c.Write(zero[:]); err != nil {
+							fmt.Printf("%s\n", fmt.Errorf("%s: bad write#1: %w", addr, err))
+						}
 						continue handle_message
 					}
 
@@ -86,7 +88,7 @@ func main() {
 					}
 
 					if _, err := c.Write(buf[:]); err != nil {
-						fmt.Printf("%s\n", fmt.Errorf("%s: bad write: %w", addr, err))
+						fmt.Printf("%s\n", fmt.Errorf("%s: bad write#2: %w", addr, err))
 						continue handle_message
 					}
 				default:
