@@ -16,16 +16,16 @@ type data struct {
 var zero [4]byte
 
 func main() {
-	addr := flag.String("addr", ":12345", "listen address")
+	listen_addr := flag.String("addr", ":12345", "listen address")
 	flag.Parse()
 
-	listener, err := net.Listen("tcp", *addr)
+	listener, err := net.Listen("tcp", *listen_addr)
 
 	if err != nil {
 		panic(fmt.Errorf("listen: %w", err))
 	}
 
-	fmt.Printf("Listening on: %+v...\n", *addr)
+	fmt.Printf("Listening on: %+v...\n", *listen_addr)
 
 	for {
 		conn, err := listener.Accept()
