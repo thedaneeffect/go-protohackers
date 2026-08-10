@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"io"
 	"net"
-	"net/netip"
 )
 
 type data struct {
@@ -16,22 +16,26 @@ type data struct {
 var zero [4]byte
 
 func main() {
-	addr := net.TCPAddrFromAddrPort(netip.MustParseAddrPort("0.0.0.0:12345"))
-	fmt.Printf("Listening on: %+v...\n", addr)
-	listener, err := net.ListenTCP("tcp", addr)
+	addr := flag.String("addr", ":12345", "listen address")
+	flag.Parse()
+
+	listener, err := net.Listen("tcp", *addr)
+
 	if err != nil {
 		panic(fmt.Errorf("listen: %w", err))
 	}
 
+	fmt.Printf("Listening on: %+v...\n", *addr)
+
 	for {
-		conn, err := listener.AcceptTCP()
+		conn, err := listener.Accept()
 		if err != nil {
 			panic(fmt.Errorf("accept: %w", err))
 		}
 
 		fmt.Printf("accept: %s\n", conn.RemoteAddr())
 
-		go func(c *net.TCPConn) {
+		go func(c net.Conn) {
 			addr := c.RemoteAddr().String()
 
 			defer fmt.Printf("close: %s\n", c.RemoteAddr())

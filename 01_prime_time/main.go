@@ -3,11 +3,11 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"math/big"
 	"net"
-	"net/netip"
 )
 
 type request struct {
@@ -21,20 +21,24 @@ type response struct {
 }
 
 func main() {
-	addr := net.TCPAddrFromAddrPort(netip.MustParseAddrPort("0.0.0.0:12345"))
-	fmt.Printf("Listening on: %+v...\n", addr)
-	listener, err := net.ListenTCP("tcp", addr)
+	addr := flag.String("addr", ":12345", "listen address")
+	flag.Parse()
+
+	listener, err := net.Listen("tcp", *addr)
+
 	if err != nil {
 		panic(fmt.Errorf("listen: %w", err))
 	}
 
+	fmt.Printf("Listening on: %+v...\n", *addr)
+
 	for {
-		conn, err := listener.AcceptTCP()
+		conn, err := listener.Accept()
 		if err != nil {
 			panic(fmt.Errorf("accept: %w", err))
 		}
 
-		go func(c *net.TCPConn) {
+		go func(c net.Conn) {
 			addr := conn.RemoteAddr()
 
 			fmt.Printf("open: %s\n", addr)
