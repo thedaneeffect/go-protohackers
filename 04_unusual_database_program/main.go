@@ -8,6 +8,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"unsafe"
 )
 
 func main() {
@@ -29,7 +30,7 @@ func main() {
 	for {
 		n, remote_addr, err := listener.ReadFromUDP(buf[:])
 		req := string(buf[:n])
-		log.Printf("%s: receive: %q", remote_addr, req)
+		log.Printf("%s: req: %q", remote_addr, req)
 		if err != nil {
 			log.Println(fmt.Errorf("%s: read: %w", remote_addr, err))
 			continue
@@ -40,7 +41,6 @@ func main() {
 				continue
 			}
 			db.Store(key, value)
-			log.Printf("%s: insert: %s=%s", remote_addr, key, value)
 		} else {
 			if loaded, ok := db.Load(key); ok {
 				value = loaded.(string)
@@ -52,11 +52,15 @@ func main() {
 			// limited to 1000 bytes.
 			n, err = fmt.Fprintf(bytes.NewBuffer(buf[:0]), "%s=%s", key, value)
 			if err != nil {
-				log.Print(fmt.Errorf("%s: bad write: (key=%s, value=%s): %w", remote_addr, key, value, err))
+				log.Print(fmt.Errorf("%s: bad Fprintf: (key=%s, value=%s): %w", remote_addr, key, value, err))
 				continue
 			}
-			log.Printf("%s: response: %q", remote_addr, string(buf[:n]))
-			_, _ = listener.WriteToUDP(buf[:n], remote_addr)
+			// unsafe just to micro-optimize
+			log.Printf("%s: resp: %q", remote_addr, unsafe.String(&buf[0], n))
+			if _, err = listener.WriteToUDP(buf[:n], remote_addr); err != nil {
+				log.Print(fmt.Errorf("%s: bad write: %w", remote_addr, err))
+				continue
+			}
 		}
 	}
 }
